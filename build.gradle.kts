@@ -10,6 +10,7 @@ dependencies {
   implementation(libs.bundles.configurate)
   implementation(libs.dependencyGetter)
   implementation(libs.slf4j)
+  implementation(libs.guava)
 
   compileOnly(libs.annotations)
 }

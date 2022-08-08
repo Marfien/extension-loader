@@ -7,6 +7,7 @@ configurate-yaml = { group = "org.spongepowered", name = "configurate-yaml", ver
 dependencyGetter = { group = "com.github.Minestom", name = "DependencyGetter", version = "v1.0.1" }
 annotations = { group = "org.jetbrains", name = "annotations", version = "23.0.0" }
 slf4j = { group = "org.slf4j", name = "slf4j-api", version = "1.7.36" }
+guava = { group = "com.google.guava", name = "guava", version = "31.1-jre" }
 
 [bundles]
 configurate = ["configurate-gson", "configurate-yaml"]

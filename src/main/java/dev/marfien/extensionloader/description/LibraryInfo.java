@@ -1,5 +1,6 @@
 package dev.marfien.extensionloader.description;
 
+import net.minestom.dependencies.maven.MavenRepository;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -14,6 +15,11 @@ public record LibraryInfo(
 
   @ConfigSerializable
   public record Repository(@NotNull String name, @NotNull String url) {
+
+    public @NotNull MavenRepository toMaven() {
+      return new MavenRepository(this.name, this.url);
+    }
+
   }
 
   @ConfigSerializable

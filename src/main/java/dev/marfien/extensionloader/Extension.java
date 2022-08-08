@@ -1,13 +1,13 @@
 package dev.marfien.extensionloader;
 
 import dev.marfien.extensionloader.description.ExtensionDescription;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class Extension {
 
   private DiscoveredExtension parent;
-  private ExtensionDescription description;
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -27,6 +27,10 @@ public abstract class Extension {
   }
 
   public ExtensionDescription getDescription() {
-    return this.description;
+    return this.parent.getDescription();
+  }
+
+  void setParent(final @NotNull DiscoveredExtension parent) {
+    this.parent = parent;
   }
 }
