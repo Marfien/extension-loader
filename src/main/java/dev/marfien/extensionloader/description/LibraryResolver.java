@@ -14,7 +14,14 @@ import java.util.List;
 
 public class LibraryResolver {
 
-  private static final MavenResolver DEFAULT = new MavenResolver(List.of(MavenRepository.Companion.getCentral(), MavenRepository.Companion.getJCenter()));
+  private static final MavenResolver DEFAULT = new MavenResolver(
+    List.of(
+      MavenRepository.Companion.getCentral(),
+      MavenRepository.Companion.getJCenter(),
+      MavenRepository.Companion.getSonatype(),
+      MavenRepository.Companion.getJitpack()
+    )
+  );
 
   private final DependencyGetter getter = new DependencyGetter();
   {

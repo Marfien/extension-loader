@@ -48,6 +48,23 @@ public class ExtensionLoader {
     return Optional.ofNullable(this.extensions.get(id));
   }
 
+  // termination
+
+  public void terminate() {
+    final var extensions = this.extensions.values();
+
+    extensions.forEach(extension -> extension.getExtension().preTerminate());
+    extensions.forEach(this::terminateExtension);
+    extensions.forEach(extension -> extension.getExtension().postTerminate());
+  }
+
+  private void terminateExtension(final @NotNull DiscoveredExtension extension) {
+    extension.getExtension().terminate();
+    extension.setState(DiscoveredExtension.State.TERMINATED);
+  }
+
+  // loading
+
   public void loadExtensions(@NotNull Path path, @NotNull Path libsPath) throws IOException {
     path = checkDirectory(path);
     libsPath = checkDirectory(libsPath);
@@ -63,24 +80,6 @@ public class ExtensionLoader {
     sorted.forEach(extension -> extension.getExtension().preInitialize());
     this.initializeExtensions(sorted);
     sorted.forEach(extension -> extension.getExtension().postInitialized());
-  }
-
-  public void terminate() {
-    final var extensions = this.extensions.values();
-
-    extensions.forEach(extension -> extension.getExtension().preTerminate());
-    extensions.forEach(this::terminateExtension);
-    extensions.forEach(extension -> extension.getExtension().postTerminate());
-  }
-
-  private void terminateExtension(final @NotNull DiscoveredExtension extension) {
-    extension.getExtension().terminate();
-    extension.setState(DiscoveredExtension.State.TERMINATED);
-  }
-
-  private static @NotNull Path checkDirectory(final @NotNull Path path) throws IOException {
-    if (Files.isDirectory(path)) return path;
-    return Files.createDirectories(path);
   }
 
   private void prepareExtensions(final @NotNull Collection<DiscoveredExtension> extensions, final @NotNull Path path, final @NotNull Path libsPath) {
@@ -103,12 +102,7 @@ public class ExtensionLoader {
     }
   }
 
-  private void createExtension(final @NotNull DiscoveredExtension discoveredExtension) throws IOException {
-    final var extension = this.initExtension(discoveredExtension.getDescription(), discoveredExtension.getClassLoader());
-    discoveredExtension.setExtension(extension);
-    extension.setParent(discoveredExtension);
-    discoveredExtension.setState(DiscoveredExtension.State.INSTANCED);
-  }
+  // <editor-folder desc="Prepare ClassLoader" defaultstate="collapsed">
 
   private synchronized void prepareClassLoader(final @NotNull DiscoveredExtension extension, final @NotNull Path path, final @NotNull Path libsPath) {
     if (extension.getClassLoader() != null) return;
@@ -142,7 +136,30 @@ public class ExtensionLoader {
     return description.libraries().artifacts().stream().flatMap(artifact -> resolver.resolve(artifact, libsPath).stream()).map(ResolvedDependency::getContentsLocation).toList();
   }
 
-  public Collection<DiscoveredExtension> discoverExtensions(final @NotNull Path path) throws IOException {
+  // </editor-folder>
+  // <editor-folder desc="Create Extension Object">
+
+  private void createExtension(final @NotNull DiscoveredExtension discoveredExtension) throws IOException {
+    final var extension = this.initExtension(discoveredExtension.getDescription(), discoveredExtension.getClassLoader());
+    discoveredExtension.setExtension(extension);
+    extension.setParent(discoveredExtension);
+    discoveredExtension.setState(DiscoveredExtension.State.INSTANCED);
+  }
+
+  private Extension initExtension(final ExtensionDescription description, final ClassLoader classLoader) throws IOException {
+    try {
+      @SuppressWarnings("unchecked")
+      final Class<? extends Extension> entrypoint = (Class<? extends Extension>) classLoader.loadClass(description.entrypoint());
+      return entrypoint.getConstructor().newInstance();
+    } catch (final Exception e) {
+      throw new IOException("Error during instantiating of %s: %s".formatted(description.id(), e.getMessage()), e);
+    }
+  }
+
+  // </editor-folder>
+  // <editor-folder desc="Discover new Extensions" defaultstate="collapsed">
+
+  private Collection<DiscoveredExtension> discoverExtensions(final @NotNull Path path) throws IOException {
     try (final var stream = Files.newDirectoryStream(path, "*.{jar,zip}")) {
       final List<DiscoveredExtension> list = Lists.newArrayList();
 
@@ -154,7 +171,7 @@ public class ExtensionLoader {
     }
   }
 
-  public synchronized DiscoveredExtension discoverExtension(final @NotNull Path path) throws IOException {
+  private synchronized DiscoveredExtension discoverExtension(final @NotNull Path path) throws IOException {
     if (!Files.isRegularFile(path)) throw new IOException("Not a regular file: %s".formatted(path));
 
     try (final var file = new ZipFile(path.toFile())) {
@@ -169,15 +186,8 @@ public class ExtensionLoader {
     }
   }
 
-  private Extension initExtension(final ExtensionDescription description, final ClassLoader classLoader) throws IOException {
-    try {
-      @SuppressWarnings("unchecked")
-      final Class<? extends Extension> entrypoint = (Class<? extends Extension>) classLoader.loadClass(description.entrypoint());
-      return entrypoint.getConstructor().newInstance();
-    } catch (final Exception e) {
-      throw new IOException("Error during instantiating of %s: %s".formatted(description.id(), e.getMessage()), e);
-    }
-  }
+  // </editor-folder>
+  // <editor-folder desc="Load ExtensionDescription" defaultstate="collapsed">
 
   private ExtensionDescription readDescription(final @NotNull ZipFile file) throws IOException {
     final var descriptionNode = this.loadDescription(file).orElseThrow(() -> new IOException("No extension description file found!"));
@@ -187,8 +197,7 @@ public class ExtensionLoader {
 
   private Optional<ConfigurationNode> loadDescription(final ZipFile file) throws IOException {
     AbstractConfigurationLoader<? extends ScopedConfigurationNode<?>> loader = null;
-    for (int i = 0; i < this.descriptionFileNames.size(); i++) {
-      final var fileName = this.descriptionFileNames.get(i);
+    for (final var fileName : this.descriptionFileNames) {
       final var entry = file.getEntry(fileName);
 
       if (entry == null) continue;
@@ -212,6 +221,15 @@ public class ExtensionLoader {
     }
 
     return loader == null ? Optional.empty() : Optional.of(loader.load());
+  }
+
+  // </editor-folder>
+
+  // Utility methods
+
+  private static @NotNull Path checkDirectory(final @NotNull Path path) throws IOException {
+    if (Files.isDirectory(path)) return path;
+    return Files.createDirectories(path);
   }
 
 }

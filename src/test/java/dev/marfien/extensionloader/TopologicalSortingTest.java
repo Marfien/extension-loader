@@ -6,6 +6,8 @@ import dev.marfien.extensionloader.description.LibraryInfo;
 import dev.marfien.extensionloader.exception.CircularDependencyException;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -45,7 +47,6 @@ class TopologicalSortingTest {
 
   private DiscoveredExtension create(final String name, final String... dependencies) {
     return new DiscoveredExtension(
-      null,
       new ExtensionDescription(
         name,
         "ignored",
@@ -56,8 +57,8 @@ class TopologicalSortingTest {
         Arrays.stream(dependencies).map(dep -> new Dependency(dep, true)).collect(Collectors.toSet()),
         new LibraryInfo(Set.of(), Set.of())
       ),
-      null,
-      null
+      Path.of("test"),
+      Path.of("test", "data")
     );
   }
 
