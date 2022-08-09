@@ -1,29 +1,30 @@
 package dev.marfien.extensionloader;
 
 import dev.marfien.extensionloader.description.ExtensionDescription;
+import org.jetbrains.annotations.NotNull;
 
+import java.net.URL;
 import java.nio.file.Path;
+import java.util.Collection;
 
 class DiscoveredExtension {
 
-  private final ClassLoader classLoader;
-  private final Extension extension;
+  private ExtensionClassLoader classLoader;
+  private Extension extension;
 
   private final ExtensionDescription description;
   private final Path file;
   private final Path dataDirectory;
 
-  private State state = State.CREATED;
+  private State state = State.DISCOVERED;
 
-  DiscoveredExtension(ClassLoader classLoader, Extension extension, ExtensionDescription description, Path file, Path dataDirectory) {
-    this.classLoader = classLoader;
-    this.extension = extension;
+  DiscoveredExtension(final @NotNull ExtensionDescription description, final @NotNull Path file, final @NotNull Path dataDirectory) {
     this.description = description;
     this.file = file;
     this.dataDirectory = dataDirectory;
   }
 
-  public ClassLoader getClassLoader() {
+  public ExtensionClassLoader getClassLoader() {
     return this.classLoader;
   }
 
@@ -43,15 +44,29 @@ class DiscoveredExtension {
     return this.description;
   }
 
+  public State getState() {
+    return this.state;
+  }
+
+  void setExtension(final @NotNull Extension extension) {
+    this.extension = extension;
+  }
+
+  void setState(final @NotNull State state) {
+    this.state = state;
+  }
+
+  void createClassLoader(final @NotNull ClassLoader parent, final @NotNull Collection<URL> urls) {
+    this.classLoader = new ExtensionClassLoader(this.description, parent, urls.toArray(URL[]::new));
+  }
+
   enum State {
 
-    CREATED,
-    PRE_INIT,
-    INIT,
-    POST_INIT,
-    PRE_TERM,
-    TERM,
-    POST_TERM
+    DISCOVERED,
+    PREPARED,
+    INSTANCED,
+    INITIALIZED,
+    TERMINATED
 
   }
 

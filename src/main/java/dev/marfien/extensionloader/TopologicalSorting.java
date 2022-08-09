@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 // This class is inspired by Velocity's PluginDependencyUtil
 // (https://github.com/PaperMC/Velocity/blob/dev/3.0.0/proxy/src/main/java/com/velocitypowered/proxy/plugin/util/PluginDependencyUtils.java)
@@ -31,7 +30,7 @@ public class TopologicalSorting {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TopologicalSorting.class);
 
-  public static List<DiscoveredExtension> sort(final @NotNull List<DiscoveredExtension> extensions) {
+  public static List<DiscoveredExtension> sort(final @NotNull Collection<DiscoveredExtension> extensions) {
     if (extensions.isEmpty()) return List.of();
     final var idMapper = Maps.uniqueIndex(extensions, e -> e.getDescription().id());
     final var descriptions = extensions.stream().map(DiscoveredExtension::getDescription).toList();
@@ -62,11 +61,11 @@ public class TopologicalSorting {
   }
 
   private static void visitNode(
-    final Graph<String> graph,
-    final Map<String, VisitingState> visitMap,
-    final String currentNode,
-    final List<String> sortedList,
-    final Stack<String> currentStack
+    final @NotNull Graph<String> graph,
+    final @NotNull Map<String, VisitingState> visitMap,
+    final @NotNull String currentNode,
+    final @NotNull List<String> sortedList,
+    final @NotNull Stack<String> currentStack
   ) {
     switch (visitMap.getOrDefault(currentNode, VisitingState.NOT_VISITED)) {
       // nothing should happen, stack already resolved
@@ -105,8 +104,10 @@ public class TopologicalSorting {
     }
   }
 
-  private static MutableGraph<String> createDependencyGraph(final @NotNull Collection<ExtensionDescription> extensionDescriptions,
-                                                            final @NotNull Collection<String> presentedIds) {
+  private static MutableGraph<String> createDependencyGraph(
+    final @NotNull Collection<ExtensionDescription> extensionDescriptions,
+    final @NotNull Collection<String> presentedIds
+  ) {
     final MutableGraph<String> dependencyGraph = GraphBuilder.directed().expectedNodeCount(extensionDescriptions.size()).build();
 
     // add every id to the graph

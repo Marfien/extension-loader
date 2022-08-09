@@ -46,7 +46,6 @@ class TopologicalSortingTest {
   private DiscoveredExtension create(final String name, final String... dependencies) {
     return new DiscoveredExtension(
       null,
-      null,
       new ExtensionDescription(
         name,
         "ignored",

@@ -25,11 +25,11 @@ public class ExtensionLoader {
   private final Map<String, DiscoveredExtension> extensions = new HashMap<>();
 
   private final List<String> descriptionFileNames;
-  private final LibraryClassLoader parentClassLoader;
+  private final ClassLoader parentClassLoader;
 
   public ExtensionLoader(final @NotNull ClassLoader parentClassLoader, final @NotNull List<String> descriptionFileNames) {
     this.descriptionFileNames = descriptionFileNames;
-    this.parentClassLoader = new LibraryClassLoader(parentClassLoader);
+    this.parentClassLoader = parentClassLoader;
   }
 
   public ExtensionLoader() {
@@ -44,23 +44,102 @@ public class ExtensionLoader {
     this(ExtensionLoader.class.getClassLoader(), descriptionFileNames);
   }
 
-  public void loadExtensions(final @NotNull Path path) throws IOException {
-    final var discoveredExt = this.discoverExtensions(path);
-
+  public @NotNull Optional<DiscoveredExtension> getDiscoveredExtension(final @NotNull String id) {
+    return Optional.ofNullable(this.extensions.get(id));
   }
 
-  private void loadExtension(final @NotNull DiscoveredExtension extension, final @NotNull Path path) {
-    this.loadLibraries(extension.getDescription(), path.resolve(".libs"));
+  public void loadExtensions(@NotNull Path path, @NotNull Path libsPath) throws IOException {
+    path = checkDirectory(path);
+    libsPath = checkDirectory(libsPath);
+
+    final var discoveredExtensions = this.discoverExtensions(path);
+
+    if (discoveredExtensions.isEmpty()) return;
+
+    final var sorted = TopologicalSorting.sort(discoveredExtensions);
+
+    this.prepareExtensions(sorted, path, libsPath);
+    this.createExtensions(sorted);
+    sorted.forEach(extension -> extension.getExtension().preInitialize());
+    this.initializeExtensions(sorted);
+    sorted.forEach(extension -> extension.getExtension().postInitialized());
   }
 
-  private void loadLibraries(final @NotNull ExtensionDescription description, final @NotNull Path libsPath) {
+  public void terminate() {
+    final var extensions = this.extensions.values();
+
+    extensions.forEach(extension -> extension.getExtension().preTerminate());
+    extensions.forEach(this::terminateExtension);
+    extensions.forEach(extension -> extension.getExtension().postTerminate());
+  }
+
+  private void terminateExtension(final @NotNull DiscoveredExtension extension) {
+    extension.getExtension().terminate();
+    extension.setState(DiscoveredExtension.State.TERMINATED);
+  }
+
+  private static @NotNull Path checkDirectory(final @NotNull Path path) throws IOException {
+    if (Files.isDirectory(path)) return path;
+    return Files.createDirectories(path);
+  }
+
+  private void prepareExtensions(final @NotNull Collection<DiscoveredExtension> extensions, final @NotNull Path path, final @NotNull Path libsPath) {
+    for (final var extension : extensions) {
+      this.prepareClassLoader(extension, path, libsPath);
+      extension.setState(DiscoveredExtension.State.PREPARED);
+    }
+  }
+
+  private void createExtensions(final @NotNull Collection<DiscoveredExtension> extensions) throws IOException {
+    for (final var extension : extensions) {
+      this.createExtension(extension);
+    }
+  }
+
+  private void initializeExtensions(final @NotNull Collection<DiscoveredExtension> extensions) {
+    for (final var extension : extensions) {
+      extension.getExtension().initialize();
+      extension.setState(DiscoveredExtension.State.INITIALIZED);
+    }
+  }
+
+  private void createExtension(final @NotNull DiscoveredExtension discoveredExtension) throws IOException {
+    final var extension = this.initExtension(discoveredExtension.getDescription(), discoveredExtension.getClassLoader());
+    discoveredExtension.setExtension(extension);
+    extension.setParent(discoveredExtension);
+    discoveredExtension.setState(DiscoveredExtension.State.INSTANCED);
+  }
+
+  private synchronized void prepareClassLoader(final @NotNull DiscoveredExtension extension, final @NotNull Path path, final @NotNull Path libsPath) {
+    if (extension.getClassLoader() != null) return;
+
+    final var libs = this.loadLibraries(extension.getDescription(), libsPath);
+    extension.createClassLoader(this.parentClassLoader, libs);
+    final var classLoader = extension.getClassLoader();
+
+    final var description = extension.getDescription();
+    for (final var dependency : description.dependencies()) {
+      final var optionalDependencyExtension = this.getDiscoveredExtension(dependency.id());
+
+      if (optionalDependencyExtension.isEmpty()) {
+        if (dependency.required()) throw new AssertionError("Dependency %s is required by %s, but not found".formatted(dependency.id(), description.id()));
+        continue;
+      }
+
+      final var dependencyExtension = optionalDependencyExtension.get();
+      this.prepareClassLoader(dependencyExtension, path, libsPath);
+      final var childClassLoader = dependencyExtension.getClassLoader();
+      assert childClassLoader != null;
+
+      classLoader.addChildClassLoader(childClassLoader);
+    }
+  }
+
+  private @NotNull Collection<URL> loadLibraries(final @NotNull ExtensionDescription description, final @NotNull Path libsPath) {
     final var resolver = new LibraryResolver();
     resolver.addRepositories(description.libraries().repositories());
 
-    for (final var artifact : description.libraries().artifacts()) {
-      final var dependencies = resolver.resolve(artifact, libsPath);
-      dependencies.stream().map(ResolvedDependency::getContentsLocation).forEach(this.parentClassLoader::addURL);
-    }
+    return description.libraries().artifacts().stream().flatMap(artifact -> resolver.resolve(artifact, libsPath).stream()).map(ResolvedDependency::getContentsLocation).toList();
   }
 
   public Collection<DiscoveredExtension> discoverExtensions(final @NotNull Path path) throws IOException {
@@ -75,23 +154,17 @@ public class ExtensionLoader {
     }
   }
 
-  public DiscoveredExtension discoverExtension(final @NotNull Path path) throws IOException {
+  public synchronized DiscoveredExtension discoverExtension(final @NotNull Path path) throws IOException {
     if (!Files.isRegularFile(path)) throw new IOException("Not a regular file: %s".formatted(path));
 
     try (final var file = new ZipFile(path.toFile())) {
       final var description = this.readDescription(file);
+      // if an extension is already presented it should not be loaded
       if (this.extensions.containsKey(description.id())) throw new IllegalStateException("An extension with id '%s' already exists.".formatted(description.id()));
-      final var classLoader = new ExtensionClassLoader(description, this.parentClassLoader, new URL[]{ path.toUri().toURL() });
-      final var extension = this.initExtension(description, classLoader);
-      final var ext = new DiscoveredExtension(
-        classLoader,
-        extension,
-        description,
-        path,
-        path.resolve(description.id())
-      );
-      extension.setParent(ext);
 
+      final var ext = new DiscoveredExtension(description, path, path.getParent().resolve(description.id()));
+
+      this.extensions.put(description.id(), ext);
       return ext;
     }
   }
