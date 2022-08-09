@@ -1,5 +1,6 @@
 [versions]
 configurate = "4.0.0"
+junit = "5.9.0"
 
 [libraries]
 configurate-gson = { group = "org.spongepowered", name = "configurate-gson", version.ref = "configurate" }
@@ -9,5 +10,9 @@ annotations = { group = "org.jetbrains", name = "annotations", version = "23.0.0
 slf4j = { group = "org.slf4j", name = "slf4j-api", version = "1.7.36" }
 guava = { group = "com.google.guava", name = "guava", version = "31.1-jre" }
 
+junit-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit" }
+junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
+
 [bundles]
 configurate = ["configurate-gson", "configurate-yaml"]
+junit = ["junit-api"]

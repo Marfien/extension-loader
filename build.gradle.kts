@@ -12,6 +12,9 @@ dependencies {
   implementation(libs.slf4j)
   implementation(libs.guava)
 
+  testImplementation(libs.junit.api)
+  testRuntimeOnly(libs.junit.engine)
+
   compileOnly(libs.annotations)
 }
 
