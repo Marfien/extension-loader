@@ -13,6 +13,8 @@ class DiscoveredExtension {
   private final Path file;
   private final Path dataDirectory;
 
+  private State state = State.CREATED;
+
   DiscoveredExtension(ClassLoader classLoader, Extension extension, ExtensionDescription description, Path file, Path dataDirectory) {
     this.classLoader = classLoader;
     this.extension = extension;
@@ -40,4 +42,17 @@ class DiscoveredExtension {
   public ExtensionDescription getDescription() {
     return this.description;
   }
+
+  enum State {
+
+    CREATED,
+    PRE_INIT,
+    INIT,
+    POST_INIT,
+    PRE_TERM,
+    TERM,
+    POST_TERM
+
+  }
+
 }
