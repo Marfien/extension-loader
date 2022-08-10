@@ -4,9 +4,9 @@ import dev.marfien.extensionloader.description.Dependency;
 import dev.marfien.extensionloader.description.ExtensionDescription;
 import dev.marfien.extensionloader.description.LibraryInfo;
 import dev.marfien.extensionloader.exception.CircularDependencyException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Set;
@@ -42,7 +42,7 @@ class TopologicalSortingTest {
       create("ext3", "ext1")
     );
 
-    assertThrows(CircularDependencyException.class, () -> TopologicalSorting.sort(list));
+    Assertions.assertThrows(CircularDependencyException.class, () -> TopologicalSorting.sort(list));
   }
 
   private DiscoveredExtension create(final String name, final String... dependencies) {

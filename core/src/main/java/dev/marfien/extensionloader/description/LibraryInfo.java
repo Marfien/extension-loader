@@ -3,17 +3,14 @@ package dev.marfien.extensionloader.description;
 import net.minestom.dependencies.maven.MavenRepository;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
 import java.util.Set;
 
-@ConfigSerializable
 public record LibraryInfo(
   @NotNull @Unmodifiable Set<Repository> repositories,
   @NotNull @Unmodifiable Set<Artifact> artifacts
 ) {
 
-  @ConfigSerializable
   public record Repository(@NotNull String name, @NotNull String url) {
 
     public @NotNull MavenRepository toMaven() {
@@ -22,10 +19,9 @@ public record LibraryInfo(
 
   }
 
-  @ConfigSerializable
   public record Artifact(
-    @NotNull String groupId,
-    @NotNull String artifactId,
+    @NotNull String group,
+    @NotNull String name,
     @NotNull String version
   ) {
 
@@ -33,7 +29,7 @@ public record LibraryInfo(
 
     @Override
     public String toString() {
-      return PATTERN.formatted(this.groupId, this.artifactId, this.version);
+      return PATTERN.formatted(this.group, this.name, this.version);
     }
 
   }

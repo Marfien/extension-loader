@@ -1,4 +1,6 @@
 [versions]
+main = "1.0.0"
+
 configurate = "4.0.0"
 junit = "5.9.0"
 

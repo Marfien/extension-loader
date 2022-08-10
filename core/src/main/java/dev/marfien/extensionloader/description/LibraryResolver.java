@@ -6,12 +6,14 @@ import net.minestom.dependencies.DependencyResolver;
 import net.minestom.dependencies.ResolvedDependency;
 import net.minestom.dependencies.maven.MavenRepository;
 import net.minestom.dependencies.maven.MavenResolver;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 
+@ApiStatus.Internal
 public class LibraryResolver {
 
   private static final MavenResolver DEFAULT = new MavenResolver(

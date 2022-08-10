@@ -6,3 +6,6 @@ dependencyResolutionManagement {
     mavenCentral()
   }
 }
+
+include("sample-extension")
+include("core")
