@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public record ExtensionDescription(
   @NotNull String id,
   @NotNull String version,
-  @NotNull String entrypoint,
+  @NotNull Class<? extends Extension> entrypoint,
   @Nullable String author,
   @Nullable String description,
   @Nullable String url,
@@ -38,7 +38,7 @@ public record ExtensionDescription(
     return new ExtensionDescription(
       meta.id(),
       meta.version(),
-      extensionClass.getName(),
+      extensionClass,
       author,
       description,
       url,

@@ -5,11 +5,6 @@ import dev.marfien.extensionloader.description.ExtensionDescription;
 import dev.marfien.extensionloader.description.LibraryResolver;
 import net.minestom.dependencies.ResolvedDependency;
 import org.jetbrains.annotations.NotNull;
-import org.spongepowered.configurate.ConfigurationNode;
-import org.spongepowered.configurate.ScopedConfigurationNode;
-import org.spongepowered.configurate.gson.GsonConfigurationLoader;
-import org.spongepowered.configurate.loader.AbstractConfigurationLoader;
-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,7 +32,7 @@ public class ExtensionLoader {
   }
 
   public ExtensionLoader(final @NotNull ClassLoader parent) {
-    this(parent, List.of("extension.json", "extension.yaml"));
+    this(parent, List.of("entrypoint.extension"));
   }
 
   public ExtensionLoader(final @NotNull List<String> descriptionFileNames) {
@@ -85,7 +80,6 @@ public class ExtensionLoader {
   private void prepareExtensions(final @NotNull Collection<DiscoveredExtension> extensions, final @NotNull Path path, final @NotNull Path libsPath) {
     for (final var extension : extensions) {
       this.prepareClassLoader(extension, path, libsPath);
-      extension.setState(DiscoveredExtension.State.PREPARED);
     }
   }
 
@@ -105,11 +99,15 @@ public class ExtensionLoader {
   // <editor-folder desc="Prepare ClassLoader" defaultstate="collapsed">
 
   private synchronized void prepareClassLoader(final @NotNull DiscoveredExtension extension, final @NotNull Path path, final @NotNull Path libsPath) {
-    if (extension.getClassLoader() != null) return;
-
-    final var libs = this.loadLibraries(extension.getDescription(), libsPath);
-    extension.createClassLoader(this.parentClassLoader, libs);
     final var classLoader = extension.getClassLoader();
+    if (classLoader.getState() == ExtensionClassLoader.State.POPULATED) return;
+    if (classLoader.getState() == ExtensionClassLoader.State.POPULATING) throw new AssertionError();
+
+    classLoader.setState(ExtensionClassLoader.State.POPULATING);
+
+    // add libraries
+    // TODO optimization
+    this.loadLibraries(extension.getDescription(), libsPath).forEach(classLoader::addLibrary);
 
     final var description = extension.getDescription();
     for (final var dependency : description.dependencies()) {
@@ -127,6 +125,8 @@ public class ExtensionLoader {
 
       classLoader.addChildClassLoader(childClassLoader);
     }
+
+    classLoader.setState(ExtensionClassLoader.State.POPULATED);
   }
 
   private @NotNull Collection<URL> loadLibraries(final @NotNull ExtensionDescription description, final @NotNull Path libsPath) {
@@ -148,8 +148,7 @@ public class ExtensionLoader {
 
   private Extension initExtension(final ExtensionDescription description, final ClassLoader classLoader) throws IOException {
     try {
-      @SuppressWarnings("unchecked")
-      final Class<? extends Extension> entrypoint = (Class<? extends Extension>) classLoader.loadClass(description.entrypoint());
+      final Class<? extends Extension> entrypoint = description.entrypoint();
       return entrypoint.getConstructor().newInstance();
     } catch (final Exception e) {
       throw new IOException("Error during instantiating of %s: %s".formatted(description.id(), e.getMessage()), e);
@@ -174,53 +173,44 @@ public class ExtensionLoader {
   private synchronized DiscoveredExtension discoverExtension(final @NotNull Path path) throws IOException {
     if (!Files.isRegularFile(path)) throw new IOException("Not a regular file: %s".formatted(path));
 
-    try (final var file = new ZipFile(path.toFile())) {
-      final var description = this.readDescription(file);
-      // if an extension is already presented it should not be loaded
-      if (this.extensions.containsKey(description.id())) throw new IllegalStateException("An extension with id '%s' already exists.".formatted(description.id()));
+    final var classLoader = new ExtensionClassLoader(this.parentClassLoader, new URL[] { path.toUri().toURL() });
+    final var entryPoint = this.readEntryPoint(path).orElseThrow(() -> new IOException("Cannot read entrypoint of %s".formatted(path)));
 
-      final var ext = new DiscoveredExtension(description, path, path.getParent().resolve(description.id()));
+    try {
+      @SuppressWarnings("unchecked") final var extensionClass = (Class<? extends Extension>) classLoader.loadClass(entryPoint);
+      final var description = ExtensionDescription.createFromClass(extensionClass);
+
+      // if an extension is already presented it should not be loaded
+      if (this.extensions.containsKey(description.id()))
+        throw new IllegalStateException("An extension with id '%s' already exists.".formatted(description.id()));
+
+      final var ext = new DiscoveredExtension(classLoader, description, path, path.getParent().resolve(description.id()));
 
       this.extensions.put(description.id(), ext);
       return ext;
+    } catch (final ClassNotFoundException e) {
+      throw new IOException("Cannot find entrypoint of %s".formatted(path), e);
     }
   }
 
   // </editor-folder>
-  // <editor-folder desc="Load ExtensionDescription" defaultstate="collapsed">
+  // <editor-folder desc="Load EntryPoint" defaultstate="collapsed">
 
-  private ExtensionDescription readDescription(final @NotNull ZipFile file) throws IOException {
-    final var descriptionNode = this.loadDescription(file).orElseThrow(() -> new IOException("No extension description file found!"));
+  private Optional<String> readEntryPoint(final @NotNull Path path) throws IOException {
+    if (this.descriptionFileNames.isEmpty()) return Optional.empty();
 
-    return descriptionNode.get(ExtensionDescription.class);
-  }
+    try (final var zipFile = new ZipFile(path.toFile())) {
+      for (final var descriptionFileName : this.descriptionFileNames) {
+        final var zipEntry = zipFile.getEntry(descriptionFileName);
+        if (zipEntry == null) continue;
 
-  private Optional<ConfigurationNode> loadDescription(final ZipFile file) throws IOException {
-    AbstractConfigurationLoader<? extends ScopedConfigurationNode<?>> loader = null;
-    for (final var fileName : this.descriptionFileNames) {
-      final var entry = file.getEntry(fileName);
-
-      if (entry == null) continue;
-      if (entry.isDirectory()) continue;
-
-      if (fileName.endsWith(".json")) {
-        loader = GsonConfigurationLoader.builder()
-          .source(() -> new BufferedReader(new InputStreamReader(file.getInputStream(entry))))
-          .build();
-        break;
+        try(final var reader = new BufferedReader(new InputStreamReader(zipFile.getInputStream(zipEntry)))) {
+          return Optional.ofNullable(reader.readLine());
+        }
       }
-
-      if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
-        loader = YamlConfigurationLoader.builder()
-          .source(() -> new BufferedReader(new InputStreamReader(file.getInputStream(entry))))
-          .build();
-        break;
-      }
-
-      throw new IOException("Unsupported file ending: %s".formatted(fileName.substring(fileName.lastIndexOf('.'))));
     }
 
-    return loader == null ? Optional.empty() : Optional.of(loader.load());
+    return Optional.empty();
   }
 
   // </editor-folder>

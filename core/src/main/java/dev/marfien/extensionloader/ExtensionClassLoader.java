@@ -1,19 +1,20 @@
 package dev.marfien.extensionloader;
 
 import com.google.common.collect.Lists;
-import dev.marfien.extensionloader.description.ExtensionDescription;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
+import java.util.UUID;
 
 public class ExtensionClassLoader extends URLClassLoader {
 
   private final Collection<ClassLoader> children = Lists.newLinkedList();
+  private @NotNull State state = State.CREATED;
 
-  ExtensionClassLoader(final @NotNull ExtensionDescription description, final @NotNull ClassLoader parent, final @NotNull URL[] urls) {
-    super("ext-%s".formatted(description.id()), urls, parent);
+  ExtensionClassLoader(final @NotNull ClassLoader parent, final @NotNull URL[] urls) {
+    super("ext-%s".formatted(UUID.randomUUID()), urls, parent);
   }
 
   public void addChildClassLoader(final @NotNull ClassLoader child) {
@@ -34,4 +35,30 @@ public class ExtensionClassLoader extends URLClassLoader {
       throw e;
     }
   }
+
+  @Override
+  public String getName() {
+    return super.getName();
+  }
+
+  public @NotNull State getState() {
+    return this.state;
+  }
+
+  void setState(final @NotNull State state) {
+    this.state = state;
+  }
+
+  void addLibrary(final @NotNull URL url) {
+    super.addURL(url);
+  }
+
+  enum State {
+
+    CREATED,
+    POPULATING,
+    POPULATED
+
+  }
+
 }

@@ -43,11 +43,13 @@ public class AnnotationProcessor extends AbstractProcessor {
       if (!(element instanceof TypeElement typeElement)) throw new AssertionError();
 
       final var name = typeElement.getQualifiedName();
-
       this.foundClass = name.toString();
 
+      final var fileName = typeElement.getAnnotation(EntryPointFileName.class);
+
       try {
-        final var file = super.processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "");
+        final var file = super.processingEnv.getFiler()
+          .createResource(StandardLocation.CLASS_OUTPUT, "", fileName != null ? fileName.value() : "entrypoint.extension");
         try (final var writer = new BufferedWriter(file.openWriter())) {
             writer.append(this.foundClass);
         }

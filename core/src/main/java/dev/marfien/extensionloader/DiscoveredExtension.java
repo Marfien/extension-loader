@@ -3,13 +3,11 @@ package dev.marfien.extensionloader;
 import dev.marfien.extensionloader.description.ExtensionDescription;
 import org.jetbrains.annotations.NotNull;
 
-import java.net.URL;
 import java.nio.file.Path;
-import java.util.Collection;
 
 class DiscoveredExtension {
 
-  private ExtensionClassLoader classLoader;
+  private final ExtensionClassLoader classLoader;
   private Extension extension;
 
   private final ExtensionDescription description;
@@ -18,10 +16,14 @@ class DiscoveredExtension {
 
   private State state = State.DISCOVERED;
 
-  DiscoveredExtension(final @NotNull ExtensionDescription description, final @NotNull Path file, final @NotNull Path dataDirectory) {
+  DiscoveredExtension(final @NotNull ExtensionClassLoader classLoader,
+                      final @NotNull ExtensionDescription description,
+                      final @NotNull Path file,
+                      final @NotNull Path dataDirectory) {
     this.description = description;
     this.file = file;
     this.dataDirectory = dataDirectory;
+    this.classLoader = classLoader;
   }
 
   public ExtensionClassLoader getClassLoader() {
@@ -54,10 +56,6 @@ class DiscoveredExtension {
 
   void setState(final @NotNull State state) {
     this.state = state;
-  }
-
-  void createClassLoader(final @NotNull ClassLoader parent, final @NotNull Collection<URL> urls) {
-    this.classLoader = new ExtensionClassLoader(this.description, parent, urls.toArray(URL[]::new));
   }
 
   enum State {
