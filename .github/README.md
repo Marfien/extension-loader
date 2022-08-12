@@ -6,9 +6,9 @@ If the extension needs external maven libraries, it downloads them automatically
 
 ## Getting started
 At first, you have to add this library to your project.
-The version is can be found on JitPack. \
+The version is can be found on JitPack.
 
-[![](https://jitpack.io/v/Marfien/extension-loader.svg)](https://jitpack.io/#Marfien/extension-loader)
+[![](https://jitpack.io/v/Marfien/extension-loader.svg)](https://jitpack.io/#Marfien/extension-loader) \
 Notable version tags:
 - `-SNAPSHOT` uses the last commit
 - `dev-SNAPSHOT` uses the last dev version
