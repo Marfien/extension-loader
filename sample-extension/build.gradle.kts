@@ -2,10 +2,7 @@ plugins {
     id("java")
 }
 
-group = "dev.marfien"
-version = "1.0.0"
-
-var core = project(":core")
+var core = project(":")
 
 dependencies {
   implementation(core)

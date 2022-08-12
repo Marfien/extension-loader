@@ -8,4 +8,3 @@ dependencyResolutionManagement {
 }
 
 include("sample-extension")
-include("core")

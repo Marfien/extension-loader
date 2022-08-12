@@ -12,7 +12,7 @@ import java.util.Comparator;
 
 class LibraryResolverTest {
 
-  private static final Path PATH = Path.of("src", "test", "resources", "resolver");
+  private static final Path PATH = Path.of("src", "test", "resources", "resources/resolver");
 
   @Test
   void testResolve() {

@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ExtensionLoaderTest {
 
-  private static final Path EXTENSIONS_PATH = Path.of("src", "test", "resources", "extensions");
+  private static final Path EXTENSIONS_PATH = Path.of("src", "test", "resources", "resources/extensions");
   private static final Path LIBS_PATH = EXTENSIONS_PATH.resolve(".libs");
 
   private final ExtensionLoader loader = new ExtensionLoader();
