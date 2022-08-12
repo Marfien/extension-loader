@@ -18,10 +18,7 @@ public class LibraryResolver {
 
   private static final MavenResolver DEFAULT = new MavenResolver(
     List.of(
-      MavenRepository.Companion.getCentral(),
-      MavenRepository.Companion.getJCenter(),
-      MavenRepository.Companion.getSonatype(),
-      MavenRepository.Companion.getJitpack()
+      MavenRepository.Companion.getCentral()
     )
   );
 

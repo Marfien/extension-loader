@@ -16,13 +16,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TopologicalSortingTest {
 
+  private static final String EXTENSION_1 = "ext1";
+  private static final String EXTENSION_2 = "ext2";
+  private static final String EXTENSION_3 = "ext3";
+  private static final String EXTENSION_4 = "ext4";
+
   @Test
   void testSorting() {
     final var list = Arrays.asList(
-      create("ext1", "ext2", "ext3"),
-      create("ext2", "ext3"),
-      create("ext3", "ext4"),
-      create("ext4")
+      create(EXTENSION_1, EXTENSION_2, EXTENSION_3),
+      create(EXTENSION_2, EXTENSION_3),
+      create(EXTENSION_3, EXTENSION_4),
+      create(EXTENSION_4)
     );
 
     final var sorted = TopologicalSorting.sort(list);
@@ -37,20 +42,21 @@ class TopologicalSortingTest {
   @Test
   void testCircularDependencies() {
     final var list = Arrays.asList(
-      create("ext1", "ext2"),
-      create("ext2", "ext3"),
-      create("ext3", "ext1")
+      create(EXTENSION_1, EXTENSION_2),
+      create(EXTENSION_2, EXTENSION_3),
+      create(EXTENSION_3, EXTENSION_1)
     );
 
-    Assertions.assertThrows(CircularDependencyException.class, () -> TopologicalSorting.sort(list));
+    assertThrows(CircularDependencyException.class, () -> TopologicalSorting.sort(list));
   }
 
   private DiscoveredExtension create(final String name, final String... dependencies) {
     return new DiscoveredExtension(
+      null,
       new ExtensionDescription(
         name,
-        "ignored",
-        "ignored",
+        null,
+        null,
         null,
         null,
         null,

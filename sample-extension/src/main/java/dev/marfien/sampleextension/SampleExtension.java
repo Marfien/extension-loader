@@ -12,11 +12,12 @@ import dev.marfien.extensionloader.annotation.*;
 @Description("This is a sample extension.")
 // @Dependency(id = "unknown-dependency", required = false)
 @Repository(name = "JitPack", url = "https://jitpack.io/")
+@Library(group = "com.github.jitpack", name = "maven-simple", version = "1.1")
 public class SampleExtension extends Extension {
 
   @Override
   protected void initialize() {
-    // TODO: annotation processor project
+
   }
 
 }

@@ -3,14 +3,14 @@ plugins {
 }
 
 group = "dev.marfien"
-version = libs.versions.main
+version = "1.0.0"
 
-repositories {
-    mavenCentral()
-}
+var core = project(":core")
 
 dependencies {
-  implementation(project(":core"))
+  implementation(core)
+  annotationProcessor(core)
+  implementation(libs.guava)
 }
 
 tasks.getByName<Test>("test") {

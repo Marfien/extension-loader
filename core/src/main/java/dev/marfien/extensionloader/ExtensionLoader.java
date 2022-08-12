@@ -43,6 +43,10 @@ public class ExtensionLoader {
     return Optional.ofNullable(this.extensions.get(id));
   }
 
+  public @NotNull List<String> getDescriptionFileNames() {
+    return List.copyOf(this.descriptionFileNames);
+  }
+
   // termination
 
   public void terminate() {
@@ -137,7 +141,7 @@ public class ExtensionLoader {
   }
 
   // </editor-folder>
-  // <editor-folder desc="Create Extension Object">
+  // <editor-folder desc="Create Extension Object" defaultstate="collapsed">
 
   private void createExtension(final @NotNull DiscoveredExtension discoveredExtension) throws IOException {
     final var extension = this.initExtension(discoveredExtension.getDescription(), discoveredExtension.getClassLoader());
@@ -151,7 +155,7 @@ public class ExtensionLoader {
       final Class<? extends Extension> entrypoint = description.entrypoint();
       return entrypoint.getConstructor().newInstance();
     } catch (final Exception e) {
-      throw new IOException("Error during instantiating of %s: %s".formatted(description.id(), e.getMessage()), e);
+      throw new IOException("An error occurred during instantiation of %s: %s".formatted(description.id(), e.getMessage()), e);
     }
   }
 
@@ -163,7 +167,7 @@ public class ExtensionLoader {
       final List<DiscoveredExtension> list = Lists.newArrayList();
 
       for (final var extensionFile : stream) {
-        list.add(this.discoverExtension(path));
+        list.add(this.discoverExtension(extensionFile));
       }
 
       return list;

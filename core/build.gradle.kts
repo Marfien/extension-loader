@@ -4,13 +4,13 @@ plugins {
 }
 
 group = "dev.marfien"
-version = libs.versions.main
+version = "1.0.0"
 
 dependencies {
-  implementation(libs.bundles.configurate)
   implementation(libs.dependencyGetter)
   implementation(libs.slf4j)
   implementation(libs.guava)
+  implementation(libs.bundles.kotlin)
 
   testImplementation(libs.junit.api)
   testRuntimeOnly(libs.junit.engine)
