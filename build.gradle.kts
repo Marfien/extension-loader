@@ -6,16 +6,16 @@ plugins {
 
 allprojects {
   group = "com.github.Marfien"
-  version = "1.0.0"
+  version = "2.0.0"
 }
 
 dependencies {
-  implementation(libs.dependencyGetter)
   implementation(libs.slf4j)
   implementation(libs.guava)
-  implementation(libs.bundles.kotlin)
+  implementation(libs.configurate.core)
 
   testImplementation(libs.junit.api)
+  testRuntimeOnly(libs.slf4j.simple)
   testRuntimeOnly(libs.junit.engine)
 
   compileOnly(libs.annotations)

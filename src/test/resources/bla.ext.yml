@@ -1,0 +1,36 @@
+entrypoint: "dev.marfien.xyz.XYZExtension"
+version: "{gradle.version}" # for gradle
+name: "{gradle.artifact}" # for gradle
+author:
+  - "Marfien"
+description: "This is the description of {extension.name} v{extension.version}"
+variables:
+  # forbidden: extension.* this.*  {  [  .
+  test-group: "com.test"
+  versions:
+    abc: 123
+  repos:
+    - "https://jitpack.io"
+    - "https://mavencentral.com"
+classpath:
+  - maven:
+      group: "{test-group}"
+      name: "bla"
+      version: "{test-obj.123}"
+      repo: "{repositories[0]}" # default MvnCentral
+    onFailure: NOTHING/REPORT/BREAKUP
+  - file:
+      url: "https://some-fancy-website.com/path/to/jar"
+      filename: "cool-lib.jar"
+      pullPolice: ALWAYS/IF_NOT_EXIST
+    onFailure:
+      runMethod: "dev.marfien.xyz.ExceptionHandler.failedCoolLib(Integer, Throwable, String)"
+      arguments:
+        - 2
+        - "{this.error}"
+        - "{this.dependency}"
+  - extension:
+      id: "dev.marfien.abc.ABCExtension"
+      version: "{versions.abc}"
+      matchVersion: "regex"
+    onFailure: REPORT

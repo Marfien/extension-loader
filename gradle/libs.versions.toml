@@ -1,19 +1,13 @@
 [versions]
 junit = "5.9.0"
-kotlin = "1.6.20"
+configurate = "4.1.2"
 
 [libraries]
-dependencyGetter = { group = "com.github.Minestom", name = "DependencyGetter", version = "v1.0.1" }
 annotations = { group = "org.jetbrains", name = "annotations", version = "23.0.0" }
 slf4j = { group = "org.slf4j", name = "slf4j-api", version = "1.7.36" }
+slf4j-simple = { group = "org.slfj", name = "slf4j-simple", version.ref = "junit" }
 guava = { group = "com.google.guava", name = "guava", version = "31.1-jre" }
+configurate-core = { group = "org.spongepowered", name = "configurate-core", version = "2.14.0" }
 
 junit-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit" }
 junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
-
-kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
-kotlin-stdlib-jdk8 = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8", version.ref = "kotlin" }
-
-[bundles]
-junit = ["junit-api"]
-kotlin = ["kotlin-reflect", "kotlin-stdlib-jdk8"]

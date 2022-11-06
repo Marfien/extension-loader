@@ -8,3 +8,4 @@ dependencyResolutionManagement {
 }
 
 include("sample-extension")
+include("model")

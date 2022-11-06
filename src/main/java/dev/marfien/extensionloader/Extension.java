@@ -1,36 +1,15 @@
 package dev.marfien.extensionloader;
 
-import dev.marfien.extensionloader.description.ExtensionDescription;
-import org.jetbrains.annotations.NotNull;
+import dev.marfien.extensionloader.properties.ExtensionProperties;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public abstract class Extension {
+public class Extension {
 
-  private DiscoveredExtension parent;
+  private final String id;
+  private final Logger logger;
+  private final ExtensionProperties properties;
 
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+  private Level level = null;
+  private Object instance;
 
-  protected Extension() {}
-
-  protected void preInitialize() {}
-  protected abstract void initialize();
-  protected void postInitialized() {}
-
-  protected void preTerminate() {}
-  protected void terminate() {}
-  protected void postTerminate() {}
-
-
-  public Logger getLogger() {
-    return this.logger;
-  }
-
-  public ExtensionDescription getDescription() {
-    return this.parent.getDescription();
-  }
-
-  void setParent(final @NotNull DiscoveredExtension parent) {
-    this.parent = parent;
-  }
 }
